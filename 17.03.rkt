@@ -19,6 +19,7 @@
 (define (quick xs)
   (define (split pivot xs l g)
     (if (null? xs)
+	; elementy w listach l, g sa odwrocone, ale nam to nie przeszkadza
         (cons l g)
         (if (<= pivot (car xs))
             (split pivot (cdr xs) l (cons (car xs) g))
@@ -28,6 +29,7 @@
     (let ((s (split pivot xs '() '())))
       (let ((le (quick (car s)))
             (gr (quick (cdr s))))
+      ; To wcale takie szybkie nie jest bo append dziala w czasie liniowym do dlugosci listy le
       (append le (list pivot) gr))))
   
   (cond [(null? xs) xs]
