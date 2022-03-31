@@ -1,0 +1,97 @@
+#lang racket
+
+(define-struct leaf () #:transparent)
+(define-struct node (l elem r) #:transparent)
+
+(define (tree? x)
+  (cond [(leaf? x) #t]
+        [(node? x) (and (tree? (node-l x)) (tree? (node-r x)))]
+        [else #f]))
+
+(define example-tree (node (node (leaf) 1 (leaf))
+                           2
+                           (node (node (leaf) 3 (leaf))
+                                 4
+                                 (node (leaf) 5 (leaf)))))
+
+(define (bst? t)
+  
+  (define (aux t fst snd)
+     (if (leaf? (fst t))
+        (cons (node-elem t) (bst? (snd t)))
+        (let ([x (aux (fst t) fst snd)])
+          (cons (car x) (and (cdr x) (bst? (snd t)))))))
+  (define (leftmost-with-bst? t)
+    (aux t node-l node-r))
+  (define (rightmost-with-bst? t)
+    (aux t node-r node-l))
+  (or (leaf? t)
+      (and (or (leaf? (node-l t))
+               (let ([x (rightmost-with-bst? (node-l t))])
+                 (and (>= (node-elem t) (car x))
+                      (cdr x))))
+           (or (leaf? (node-r t))
+               (let ([x (leftmost-with-bst? (node-r t))])
+                 (and (<= (node-elem t) (car x))
+                      (cdr x)))))))
+
+
+;    
+;    7     
+;  1   
+; 6 9
+;
+; infix order on t
+; (left ; [elem t] ; right)
+
+
+(define (flat-append t xs)
+  (cond [(leaf? t)
+         xs]
+        [(and (leaf? (node-l t)) (leaf? (node-r t)))
+         (cons (node-elem t) xs)]
+        [(leaf? (node-l t))
+         (cons (node-elem t) (flat-append (node-r t) xs))]
+        [(leaf? (node-r t))
+         (flat-append (node-l t) (cons (node-elem t) xs))]
+        [else
+         (flat-append (node-l t)
+                      (cons (node-elem t)
+                            (flat-append (node-r t) xs)))]))
+         
+         
+(define (flatten t)
+  (flat-append t '()))
+
+
+
+(define (delete t v)
+ 
+  (define (maybe-leftmost t)
+    (cond [(leaf? t)
+           null]
+          [(leaf? (node-l t))
+           (node-elem t)]
+          [else
+           (maybe-leftmost (node-l t))]))
+        
+  (define (aux t)
+    (let ([mm (maybe-leftmost (node-r t))])
+      (if (null? mm)
+          (node-l t)
+          (node (node-l t) mm (delete (node-r t) mm)))))
+    
+  (cond [(leaf? t)
+         t]
+        [(< v (node-elem t))
+         (node (delete (node-l t) v)
+               (node-elem t)
+               (node-r t))]
+        [(> v (node-elem t))
+         (node (node-l t)
+               (node-elem t)
+               (delete (node-r t) v))]
+        [else ; v == node-elem t
+         (aux t)]))
+        
+      
